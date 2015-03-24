@@ -1,4 +1,7 @@
-fitCJS <- function(W,T,k,control=NULL,hess=FALSE,truth=NULL){
+fitCJS <- function(W,T,k,control=NULL,hess=FALSE,truth=NULL,debug=FALSE){
+    if(debug)
+        browser()
+    
     ## Compute summary statistics
     R <- summstatCJS(W,k)
 

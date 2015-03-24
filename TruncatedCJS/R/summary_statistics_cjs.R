@@ -2,6 +2,8 @@ summstatCJS <- function(W,k){
     ## Generate summary statistics
     ## k is the number of capture occasions to look ahead
 
+    T <- ncol(W)
+    
     R <- t(sapply(1:(T-1),function(t){
         ## Identify releases
         rels <- which(W[,t]==1)
