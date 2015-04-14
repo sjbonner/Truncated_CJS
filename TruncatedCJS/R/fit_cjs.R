@@ -4,7 +4,7 @@ fitCJS <- function(W,T,k,control=NULL,hess=FALSE,truth=NULL,debug=FALSE){
     
     ## Compute summary statistics
     R <- summstatCJS(W,k)
-
+    
     ## Compute MLEs
     llhd.opt <- mleCJS(R,T,k,rep(.5,T-1),rep(.5,T-2),control=control,hess=hess)
     

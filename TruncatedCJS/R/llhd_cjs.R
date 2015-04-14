@@ -1,3 +1,6 @@
+## Utilities
+logit <- make.link("logit")
+
 PCJS <- function(phi,p,T,k){
     ## Define multinomial cell probabilities
     t(sapply(1:(T-1),function(t){
