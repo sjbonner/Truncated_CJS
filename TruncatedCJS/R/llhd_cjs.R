@@ -231,7 +231,7 @@ llhdCJSgr<- function(pars,R,T,k,debug=FALSE,logitscale=TRUE){
   
   dP0.dP <- matrix(NA, T-1, (T-1)*k)
   for(i in 1:k){
-    dP0.dP[,((i-1)*(T-1)+1):(i*(T-1))] <- diag(as.numeric(i<=(T - 1:(T-1)))*R[,k+2]/P[,k+1])
+    dP0.dP[,((i-1)*(T-1)+1):(i*(T-1))] <- diag(-as.numeric(i<=(T - 1:(T-1)))*R[,k+2]/P[,k+1])
   }
   
   dP.dtheta <- matrix(NA, k*(T-1), length(c(phi,p)))
