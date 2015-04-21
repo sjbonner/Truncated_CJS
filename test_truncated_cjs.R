@@ -1,20 +1,27 @@
+## Clear the workspace of cruft
+rm(list=ls())
+
 ## Load devtools package
 library(devtools)
 
 ## Load package from library
-library(TruncatedCJS)
+## library(TruncatedCJS)
 
 ## Reload files from package directory
-packdir <- "TruncatedCJS"
-devtools::reload(packdir)
+## devtools::reload(packdir)
+
+## Load all package files
+packdir <- "TruncatedCJS"               
+devtools::load_all(packdir)
 
 ## Set seed
 set.seed(777)
 
 ## Good model parameters
+usize <- 1000
 T <- 10
-phi <- round(rbeta(T-1,3,6),2)
-p <- round(rbeta(T-1,6,2),2)
+phi <- round(rbeta(T-1,12,4),2)
+p <- round(rbeta(T-1,12,4),2)
 
 ## Bad model parameters
 ## T <- 10
@@ -27,21 +34,85 @@ truth <- list(phi=phi,p=p)
 logit <- make.link("logit")
 
 ## Number of unmarked individuals captured on each occasion
-u <- rnbinom(T-1,100,.5)
+u <- rnbinom(T-1,usize,.5)
 
 ## Simulate data
-W <- simulateCJS(u,T,phi,p)
+W <- simulateCJS(u,T,phi,p,debug=FALSE)
+
+## Test likelihood
+k <- T
+R <- summstatCJS(W,k)
+llhd.test <- llhdCJScombined(logit$linkfun(c(phi,p[-(T-1)])),R,T,k)
+
+## Test optimization
+phi.init <- rep(.5,T-1)
+p.init <- rep(.5,T-2)
+
+## phi.init <- logit$linkinv(mle1$par[1:(T-1)])
+## p.init <- logit$linkinv(mle1$par[T:(2*T-3)])
+
+system.time(mle1 <- mleCJS(R,T,k,phi.init,p.init,hess=TRUE))
+#system.time(mle2 <- mleCJSnlmtest(R,T,k,phi.init,p.init,hess=TRUE))
+system.time(mle2 <- mleCJSnlm(R,T,k,phi.init,p.init,hess=TRUE))
+system.time(mle3 <- mleCJSrootSolve(R,T,k,phi.init,p.init))
+
+
+## Compare truth, estimates from optim, and estimates from nlm
+round(cbind(c(phi,p[1:(T-2)]),
+            logit$linkinv(mle1$par),
+            logit$linkinv(mle2$estimate),
+            logit$linkinv(mle3$root))
+     ,6)
+
+max(abs(mle2$estimate-mle1$par))
+max(abs(mle3$root-mle1$par))
+
+## Compare gradients from optim, nlm, and my code
+## par <- mle1$par
+par <- mle2$estimate
+
+mygrad <- llhdCJSgr(par,R,T,k)
+mygrad2 <- attr(llhdCJScombined(par,R,T,k),"gr")
+
+max(abs(mygrad+mle2$gradient))
+max(abs(mygrad2+mle2$gradient))
+sum(mle2$gr^2)/sum(mygrad^2)
+
+## Compare Hessian from optim with my Hessian
+##par <- mle1$par
+par <- mle2$estimate
+
+myhess <- llhdCJShess(par,R,T,k)
+myhess2 <- attr(llhdCJScombined(par,R,T,k),"hessian")
+myhess3 <- dget("hess_test.R")
+
+## Compare my computations of Hessian
+max(abs(myhess-myhess2))
+max(abs(myhess-myhess3))
+
+## Compare my Hessian with Hessian from optim
+max(abs(myhess-mle1$hess))
+max(abs(myhess2-mle1$hess))
+max(abs(myhess3-mle1$hess))
+
+## Compare Hessian from nlm with my Hessian
+max(abs(myhess+mle2$hess))
+max(abs(myhess2+mle2$hess))             # What???
+max(abs(myhess3+mle2$hess))
+
+## Compare Hessian from optim and nlm
+max(abs(mle1$hess+mle2$hess))          
 
 ## Fit model
-fit2 <- fitCJS(W,T,2,control=list(trace=1,maxit=10000),hess=TRUE,truth=truth,debug=FALSE)
+system.time(fit2 <- fitCJS(W,T,2,control=list(trace=1,maxit=10000),hess=TRUE,truth=truth,debug=FALSE))
 hess2 <- llhdCJShess(fit2$opt$par,summstatCJS(W,2),T,2)
 max(abs(fit2$opt$hess-hess2))
 
-fit3 <- fitCJS(W,T,3,control=list(trace=1,maxit=10000),hess=TRUE,truth=truth)
+system.time(fit3 <- fitCJS(W,T,3,control=list(trace=1,maxit=10000),hess=TRUE,truth=truth))
 hess3 <- llhdCJShess(fit3$opt$par,summstatCJS(W,3),T,3)
 max(abs(fit3$opt$hess-hess3))
 
-fitT<- fitCJS(W,T,T,control=list(trace=1,maxit=10000),hess=TRUE,truth=truth)
+system.time(fitT<- fitCJS(W,T,T,control=list(trace=1,maxit=10000),hess=TRUE,truth=truth))
 hessT <- llhdCJShess(fitT$opt$par,summstatCJS(W,T),T,T)
 max(abs(fitT$opt$hess-hessT))
 
@@ -107,34 +178,51 @@ library(numDeriv)
 k <- 3
 R <- summstatCJS(W,k)
 
-pars <- c(logit$linkfun(phi),logit$linkfun(p[-(T-1)]))
+#pars <- c(logit$linkfun(phi),logit$linkfun(p[-(T-1)]))
+pars <- c(rnorm(T-1),rnorm(T-2))
 
 grad1 <- llhdCJSgr(pars,R,T,k)
 grad2 <- grad(llhdCJS,pars,R=R,T=T,k=k)
+grad3 <- attr(llhdCJScombined(pars,R,T,k,gradient=TRUE,hessian=FALSE),"gr")
 
 round(tmp <- grad1-grad2,6)
-          
+max(abs(tmp))
+
+round(tmp <- grad2-grad3,6)
+max(abs(tmp))
+
+round(tmp <- grad1-grad3,6)
 max(abs(tmp))
 
 ##### Test Hessian #####
-k <- 3
+k <- T
 R <- summstatCJS(W,k)
 
-pars <- c(logit$linkfun(phi),logit$linkfun(p[-(T-1)]))
+#pars <- c(logit$linkfun(phi),logit$linkfun(p[-(T-1)]))
+pars <- c(rnorm(T-1),rnorm(T-2))
 
 system.time(hess1 <- llhdCJShess(pars,R,T,k))
 system.time(hess2 <- hessian(llhdCJS,pars,R=R,T=T,k=k))
+system.time(hess3 <- attr(llhdCJScombined(pars,R=R,T=T,k=k),"hessian"))
+system.time(hess4 <- jacobian(llhdCJSgr,pars,R=R,T=T,k=k))
 
 round(tmp <- hess1-hess2,3)
+max(abs(tmp))
 
+round(tmp <- hess1-hess3,3)
+max(abs(tmp))
+
+round(tmp <- hess1-hess4,3)
 max(abs(tmp))
 
 round(hess1[1:(T-1),1:(T-1)]-hess2[1:(T-1),1:(T-1)],3)
 round(hess1[T:(2*T-3),T:(2*T-3)]-hess2[T:(2*T-3),T:(2*T-3)],3)
 round(hess1[1:(T-1),T:(2*T-3)]-hess2[1:(T-1),T:(2*T-3)],3)
 
+##### Test Hessian 2 (Jacobian of Gradient) #####
+
 ##### Run in MARK #####
-markdataCJSfull(W,"MARK/mark_sim_test_full.INP")
+# markdataCJSfull(W,"MARK/mark_sim_test_full.INP")
 markdataCJS(W,T-1,"MARK/mark_sim_test_T-1.INP")
 markdataCJS(W,2,"MARK/mark_sim_test_2.INP")
 markdataCJS(W,3,"MARK/mark_sim_test_3.INP")
@@ -155,7 +243,7 @@ for(t in 1:(T-1)){
         tmp1 <- grad(testdP.dphi,phi[1:(T-1)],t=t,s=s,pars=pars,T=T,k=k)
 
         d <- max(abs(tmp1-dP.dphi[t,s,]))
-        
+
         if(d > 1e-6)
             cat(t,s,":",d,"\n")
     }
@@ -172,7 +260,7 @@ for(t in 1:(T-1)){
         tmp1 <- grad(testdP.dp,p[1:(T-2)],t=t,s=s,pars=pars,T=T,k=k)
 
         d <- max(abs(tmp1-dP.dp[t,s,]))
-        
+
         if(d > 1e-6)
             cat(t,s,":",d,"\n")
     }
@@ -303,7 +391,7 @@ dl.dP <- R[,2:(k+1)]/P[,1:k] - R[,k+2]/P[,k+1]
 d2l.dphi2 <- sapply(1:(T-1),function(u){
     sapply(1:(T-1),function(v){
         - sum(R[,2:(k+1)]/P[,1:k]^2 * dP.dphi[,,u] * dP.dphi[,,v],na.rm=TRUE) -
-            sum(R[,k+2]/P[,k+1]^2 * apply(dP.dphi[,,u],1,sum) * apply(dP.dphi[,,v],1,sum), na.rm=TRUE) + 
+            sum(R[,k+2]/P[,k+1]^2 * apply(dP.dphi[,,u],1,sum) * apply(dP.dphi[,,v],1,sum), na.rm=TRUE) +
                 sum(dl.dP * d2P.dphi2[,,u,v],na.rm=TRUE)
     })
 })
@@ -330,7 +418,7 @@ dl.dP <- R[,2:(k+1)]/P[,1:k] - R[,k+2]/P[,k+1]
 d2l.dp2 <- sapply(1:(T-2),function(u){
     sapply(1:(T-2),function(v){
         - sum(R[,2:(k+1)]/P[,1:k]^2 * dP.dp[,,u] * dP.dp[,,v],na.rm=TRUE) -
-            sum(R[,k+2]/P[,k+1]^2 * apply(dP.dp[,,u],1,sum) * apply(dP.dp[,,v],1,sum), na.rm=TRUE) + 
+            sum(R[,k+2]/P[,k+1]^2 * apply(dP.dp[,,u],1,sum) * apply(dP.dp[,,v],1,sum), na.rm=TRUE) +
                 sum(dl.dP * d2P.dp2[,,u,v],na.rm=TRUE)
     })
 })
@@ -358,7 +446,7 @@ dl.dP <- R[,2:(k+1)]/P[,1:k] - R[,k+2]/P[,k+1]
 d2l.dphidp <- sapply(1:(T-1),function(u){
     sapply(1:(T-2),function(v){
         - sum(R[,2:(k+1)]/P[,1:k]^2 * dP.dphi[,,u] * dP.dp[,,v],na.rm=TRUE) -
-            sum(R[,k+2]/P[,k+1]^2 * apply(dP.dphi[,,u],1,sum) * apply(dP.dp[,,v],1,sum), na.rm=TRUE) + 
+            sum(R[,k+2]/P[,k+1]^2 * apply(dP.dphi[,,u],1,sum) * apply(dP.dp[,,v],1,sum), na.rm=TRUE) +
                 sum(dl.dP * d2P.dphidp[,,u,v],na.rm=TRUE)
     })
 })

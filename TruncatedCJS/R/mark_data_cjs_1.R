@@ -9,7 +9,7 @@ markdataCJSfull <- function(W,file){
     #system(paste("unix2dos",file))
 
     ## Write capture histories
-    for(i in 1:nrow(W))o
+    for(i in 1:nrow(W))
         cat(paste(W[i,],collapse="")," 1; /*",i,",",t,"*/\n",sep="",file=file,append=TRUE)
 }
 

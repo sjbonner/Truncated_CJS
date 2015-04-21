@@ -1,4 +1,7 @@
-simulateCJS <- function(u,T,phi,p){
+simulateCJS <- function(u,T,phi,p,debug=FALSE){
+
+    if(debug)
+        browser()
 
     ## Generate survival matrix
     S <- sapply(1:(T-1),function(t){
@@ -13,6 +16,7 @@ simulateCJS <- function(u,T,phi,p){
 
     ## Generate capture matrix
     W <- do.call("rbind",sapply(1:(T-1),function(t){
+        
         W.tmp <- matrix(0,u[t],T)
         W.tmp[,t] <- 1
 
