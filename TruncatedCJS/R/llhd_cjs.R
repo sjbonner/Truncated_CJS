@@ -124,66 +124,139 @@ d2P.dphidpCJS <- function(phi,p,P,T,k){
     out
 }
             
+# llhdCJS <- function(pars,R,T,k,debug=FALSE){
+#     if(debug)
+#         browser()
+#     
+#     ## Unpack parameters
+#     phi <- logit$linkinv(pars[1:(T-1)])
+# 
+#     if(length(pars)==2*T-3)
+#         p <- c(logit$linkinv(pars[T:(2*T-3)]),1)
+#     else
+#         p <- logit$linkinv(pars[T:(2*T-2)])
+# 
+#     ## Define multinomial probabilities
+#     P <- PCJS(phi,p,T,k)
+#     
+#     ## Compute likelihood
+#     sum(sapply(1:(T-1),function(t){
+#         dmultinom(R[t,-1],R[t,1],P[t,],log=TRUE)
+#     }))
+# 
+# }
+
 llhdCJS <- function(pars,R,T,k,debug=FALSE){
-    if(debug)
-        browser()
-    
-    ## Unpack parameters
-    phi <- logit$linkinv(pars[1:(T-1)])
-
-    if(length(pars)==2*T-3)
-        p <- c(logit$linkinv(pars[T:(2*T-3)]),1)
-    else
-        p <- logit$linkinv(pars[T:(2*T-2)])
-
-    ## Define multinomial probabilities
-    P <- PCJS(phi,p,T,k)
-    
-    ## Compute likelihood
-    sum(sapply(1:(T-1),function(t){
-        dmultinom(R[t,-1],R[t,1],P[t,],log=TRUE)
-    }))
+  if(debug)
+    browser()
+  
+  ## Unpack parameters
+  phi <- logit$linkinv(pars[1:(T-1)])
+  
+  if(length(pars)==2*T-3)
+    p <- c(logit$linkinv(pars[T:(2*T-3)]),1)
+  else
+    p <- logit$linkinv(pars[T:(2*T-2)])
+  
+  ## Define multinomial probabilities
+  P <- PCJS(phi,p,T,k)
+  
+  P.1 <- R[,2:(k+1)]*log(P[,1:k])
+  P.1[is.nan(P.1)] <- 0
+  P.0 <- R[,k+2]*log(P[,k+1])
+  
+  return(as.numeric(rep(1,T-1)%*%(P.1%*%rep(1,k) + P.0)))
+  
 }
 
-llhdCJSgr <- function(pars,R,T,k,debug=FALSE,logitscale=TRUE){
-    if(debug)
-        browser()
+# llhdCJSgr <- function(pars,R,T,k,debug=FALSE,logitscale=TRUE){
+#     if(debug)
+#         browser()
+# 
+#     ## Unpack parameters
+#     phi <- logit$linkinv(pars[1:(T-1)])
+# 
+#     if(length(pars)==2*T-3)
+#         p <- c(logit$linkinv(pars[T:(2*T-3)]),1)
+#     else
+#         p <- logit$linkinv(pars[T:(2*T-2)])
+# 
+#     ## Define multinomial probabilities
+#     P <- PCJS(phi,p,T,k)
+#     
+#     ## Compute derivative of each cell probability wrt phi
+#     dP.dphi <- dP.dphiCJS(phi,p,P,T,k)
+#         
+#     ## Compute derivative of each cell probability wrt phi
+#     dP.dp <- dP.dpCJS(phi,p,P,T,k)
+# 
+#     ## Compute derivative of likelihood wrt each element of P
+#     dl.dP <- R[,2:(k+1)]/P[,1:k] - R[,k+2]/P[,k+1]
+#     
+#     ## Compute gradient
+#     dl.dphi <- sapply(1:(T-1),function(r){
+#         sum(dl.dP * dP.dphi[,,r],na.rm=TRUE)
+#     })
+# 
+#     dl.dp <- sapply(1:(T-2),function(r){
+#         sum(dl.dP * dP.dp[,,r],na.rm=TRUE)
+#     })
+# 
+#     if(!logitscale)
+#         return(c(dl.dphi,dl.dp))
+#     
+#     ## Transform to logit scale
+#     else
+#         return(c(dl.dphi,dl.dp) * c(phi,p[-(T-1)])*(1-c(phi,p[-(T-1)])))
+# }
 
-    ## Unpack parameters
-    phi <- logit$linkinv(pars[1:(T-1)])
-
-    if(length(pars)==2*T-3)
-        p <- c(logit$linkinv(pars[T:(2*T-3)]),1)
-    else
-        p <- logit$linkinv(pars[T:(2*T-2)])
-
-    ## Define multinomial probabilities
-    P <- PCJS(phi,p,T,k)
-    
-    ## Compute derivative of each cell probability wrt phi
-    dP.dphi <- dP.dphiCJS(phi,p,P,T,k)
-        
-    ## Compute derivative of each cell probability wrt phi
-    dP.dp <- dP.dpCJS(phi,p,P,T,k)
-
-    ## Compute derivative of likelihood wrt each element of P
-    dl.dP <- R[,2:(k+1)]/P[,1:k] - R[,k+2]/P[,k+1]
-    
-    ## Compute gradient
-    dl.dphi <- sapply(1:(T-1),function(r){
-        sum(dl.dP * dP.dphi[,,r],na.rm=TRUE)
-    })
-
-    dl.dp <- sapply(1:(T-2),function(r){
-        sum(dl.dP * dP.dp[,,r],na.rm=TRUE)
-    })
-
-    if(!logitscale)
-        return(c(dl.dphi,dl.dp))
-    
-    ## Transform to logit scale
-    else
-        return(c(dl.dphi,dl.dp) * c(phi,p[-(T-1)])*(1-c(phi,p[-(T-1)])))
+llhdCJSgr<- function(pars,R,T,k,debug=FALSE,logitscale=TRUE){
+  if(debug)
+    browser()
+  
+  ## Unpack parameters
+  phi <- logit$linkinv(pars[1:(T-1)])
+  
+  if(length(pars)==2*T-3)
+    p <- c(logit$linkinv(pars[T:(2*T-3)]),1)
+  else
+    p <- logit$linkinv(pars[T:(2*T-2)])
+  
+  ## Define multinomial probabilities
+  P <- PCJS(phi,p,T,k)
+  
+  dP1.dP.diag <- as.numeric(R[,2:(k+1)]/P[,1:k])
+  dP1.dP.diag[is.nan(dP1.dP.diag)] <- 0
+  dP1.dP <- diag(dP1.dP.diag)
+  
+  dP0.dP <- matrix(NA, T-1, (T-1)*k)
+  for(i in 1:k){
+    dP0.dP[,((i-1)*(T-1)+1):(i*(T-1))] <- diag(as.numeric(i<=(T - 1:(T-1)))*R[,k+2]/P[,k+1])
+  }
+  
+  dP.dtheta <- matrix(NA, k*(T-1), length(c(phi,p)))
+  for(i in 1:length(c(phi,p))){
+    for(s in 1:k){
+      for(t in 1:(T-1)){
+        if(i != length(c(phi,p))){
+          dP.dtheta[ (s-1)*(T-1)+t, i] <- (P[t,s]/c(phi,p)[i])*(as.numeric(i<=t+s-1)*as.numeric(t<=i)*as.numeric(s<=min(k,T-t)) + as.numeric(i-length(phi)+1==t+s)*as.numeric(s<=min(k,T-t))) + (-P[t,s]/(1-c(phi,p)[i]))*as.numeric(i-length(phi)+1 <= t+s-1)*as.numeric(t+1 <= i-length(phi)+1)*as.numeric(s<=min(k,T-t))
+        }else{
+          dP.dtheta[ (s-1)*(T-1)+t, i] <- (P[t,s]/c(phi,p)[i])*(as.numeric(i<=t+s-1)*as.numeric(t<=i)*as.numeric(s<=min(k,T-t)) + as.numeric(i-length(phi)+1==t+s)*as.numeric(s<=min(k,T-t)))
+        }
+      }
+    }
+  }
+  
+  dl.dtheta <- as.numeric(rep(1,k*(T-1))%*%dP1.dP%*%dP.dtheta + rep(1,T-1)%*%dP0.dP%*%dP.dtheta)
+  dl.dphi <- dl.dtheta[1:(T-1)]
+  dl.dp <- dl.dtheta[T:(2*T-3)]
+  
+  if(!logitscale)
+    return(c(dl.dphi,dl.dp))
+  
+  ## Transform to logit scale
+  else
+    return(c(dl.dphi,dl.dp) * c(phi,p[-(T-1)])*(1-c(phi,p[-(T-1)])))
 }
 
 llhdCJShess <- function(pars,R,T,k,debug=FALSE){
