@@ -7,29 +7,31 @@ source("TruncatedCJS/R/llhd_cjs.R")
 source("TruncatedCJS/R/utilities.R")
 
 ## Parameters
-T = 10 # Occasions
+T = 25 # Occasions
 
-p = rep(.8,T-1) # Capture probabilities
-phi = rep(.2,T-1) # Survival probabilities
+p = rep(.1, T - 1) # Capture probabilities
+phi = rep(.9, T - 1) # Survival probabilities
 
-eta = c(log(phi)-log(1-phi), log(p)-log(1-p)) ## Parameters on logit scale
+eta = c(log(phi) - log(1 - phi), log(p) - log(1 - p)) ## Parameters on logit scale
 
-n = rep(1000,T-1) # Releases
+n = rep(1000, T - 1) # Releases
 
-
-V=sapply(2:(T-1),function(k){
+V = sapply(2:(T - 1), function(k) {
+  cat(k, "...\n")
   
-  cat(k,"...\n")
-
   ## Compute cell probabilities
-  P = PCJS(phi,p,T,k)
+  P = PCJS(phi, p, T, k)
   
   ## Compute expected data
   EM = n * P
   
   ## Compute Hessian matrix numerically
-  R = cbind(n,EM)
-  H = hessian(llhdCJS,eta,R=R,T=T,k=k)
+  R = cbind(n, EM)
+  H = hessian(llhdCJS,
+              eta,
+              R = R,
+              T = T,
+              k = k)
   
   ## Compute Hessian matrix analytically (Not working)
   ## H = llhdCJShess(c(phi,p),R,T,k)
@@ -38,23 +40,36 @@ V=sapply(2:(T-1),function(k){
   var = diag(-solve(H))
 })
 
-Vdf=data.frame(Variance=as.vector(V),
-               Parameter=factor(rep(rep(c("phi","p"),c(T-1,T-1)),T-2)),
-               Index=factor(rep(1:(T-1),2*(T-2))),
-               Occasion=factor(rep(c(1:(T-1),2:T),T-2)),
-               k=rep(2:(T-1),rep(2*(T-1),T-2)))
-
-print(ggplot(subset(Vdf,Index != T-1),aes(x=k,y=Variance,group=Occasion)) +
-        geom_line() + geom_point(aes(color=Occasion)) + facet_grid(Parameter ~ .))
+# Vdf=data.frame(Variance=as.vector(V),
+#                Parameter=factor(rep(rep(c("phi","p"),c(T-1,T-1)),T-2)),
+#                Index=factor(rep(1:(T-1),2*(T-2))),
+#                Occasion=factor(rep(c(1:(T-1),2:T),T-2)),
+#                k=rep(2:(T-1),rep(2*(T-1),T-2)))
+#
+# print(ggplot(subset(Vdf,Index != T-1),aes(x=k,y=Variance,group=Occasion)) +
+#         geom_line() + geom_point(aes(color=Occasion)) + facet_grid(Parameter ~ .))
 
 ## Convert to a data frame with variance as percent of full data value
-Vprop = t(apply(V,1,function(v) 100*v/tail(v,1)))
+Vprop = t(apply(V, 1, function(v)
+  100 * v / tail(v, 1)))
 
-Vpropdf=data.frame(Variance=as.vector(Vprop),
-               Parameter=factor(rep(rep(c("phi","p"),c(T-1,T-1)),T-2)),
-               Index=factor(rep(1:(T-1),2*(T-2))),
-               Occasion=factor(rep(c(1:(T-1),2:T),T-2)),
-               k=rep(2:(T-1),rep(2*(T-1),T-2)))
+Vpropdf = data.frame(
+  Variance = as.vector(Vprop),
+  Parameter = factor(rep(rep(
+    c("phi", "p"), c(T - 1, T - 1)
+  ), T - 2)),
+  Index = factor(rep(1:(T - 1), 2 * (T - 2))),
+  Occasion = factor(rep(c(1:(
+    T - 1
+  ), 2:T), T - 2)),
+  k = rep(2:(T - 1), rep(2 * (T - 1), T - 2))
+)
 
-print(ggplot(subset(Vpropdf,Index != T-1),aes(x=k,y=Variance,group=Occasion)) +
-        geom_line() + geom_point(aes(color=Occasion)) + facet_grid(Parameter ~ .))
+print(
+  ggplot(
+    subset(Vpropdf, Index != T - 1),
+    aes(x = k, y = Variance, group = Occasion)
+  ) +
+    geom_line() + geom_point(aes(color = Occasion)) + facet_grid(Parameter ~ .) +
+    ggtitle(paste0("phi=", phi[1], ", p=", p[1], ", n=", n[1]))
+)
