@@ -138,7 +138,8 @@ llhdCJS <- function(pars,R,T,k,debug=FALSE){
 
     ## Compute likelihood
     sum(sapply(1:(T-1),function(t){
-        dmultinom(R[t,-1],R[t,1],P[t,],log=TRUE)
+        #dmultinom(R[t,-1],R[t,1],P[t,],log=TRUE)
+      dmultinom(R[t,-1],prob=P[t,],log=TRUE)
     }))
 }
 
