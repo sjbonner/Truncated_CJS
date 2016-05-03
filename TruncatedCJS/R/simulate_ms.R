@@ -37,8 +37,11 @@ simulateMS <- function(nstate,u,T,phi,p,debug=FALSE){
         W.tmp <- matrix(0,sum(u[,t]),T)
         W.tmp[,t] <-Wfull[[t]][,t]
 
-        for(s in t:(T-1))
-            W.tmp[,s+1] <- Wfull[[t]][,s+1]*(runif(sum(u[,t])) < S[[t]][,s+1] * p[Wfull[[t]][,s],s])
+        
+        for(s in t:(T-1)){
+            p.tmp <- S[[t]][,s+1] * p[Wfull[[t]][,s+1],s]
+            W.tmp[,s+1] <- Wfull[[t]][,s+1]*(runif(sum(u[,t])) <  p.tmp)
+        }
 
         W.tmp
     }))
