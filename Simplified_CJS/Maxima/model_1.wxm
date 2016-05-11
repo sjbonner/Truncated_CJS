@@ -1,0 +1,110 @@
+/* [wxMaxima batch file version 1] [ DO NOT EDIT BY HAND! ]*/
+/* [ Created with wxMaxima version 15.08.2 ] */
+
+/* [wxMaxima: section start ]
+Finite k
+   [wxMaxima: section end   ] */
+
+/* [wxMaxima: input   start ] */
+P[j](phi):=phi^j*(1-p)^(j-1)*p;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+P[0](phi):=((1-phi)-p*phi^(k+1)*(1-p)^k)/(1-phi*(1-p));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+l(phi):=sum(m[j]*log(P[j](phi)),j,1,k) + m[0] * log(1-sum(P[j](phi),j,1,k));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+diff(l(phi),phi);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+diff(l(phi),phi,2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+subst(n*P[j](phi), m[j], %);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+subst(n*(1-sum(P[j](phi),j,1,k)),m[0],%);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+intosum(%);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+sumcontract(%);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+expand(%);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+Assuming interchange of limit and derivative (need to show uniform convergence of derivatives, Bartle and Sherbert Thm 8.2.3)
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+-np/(1-phi*(1-p)) *(1-phi^2 *(1-p))/(phi*(1-phi));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+-1/%;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: section start ]
+Infinite k
+
+   [wxMaxima: section end   ] */
+
+/* [wxMaxima: input   start ] */
+linf(phi):=sum(m[j]*log(P(phi,j)),j,1,inf) + m[0]*log((1-phi))-m[0]*log(1-phi*(1-p));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+diff(linf(phi),phi);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+diff(linf(phi),phi,2);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+subst(n*P(phi,j), m[j], %);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+subst(n*(1-phi)/(1-phi*(1-p)),m[0],%);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+intosum(%);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+sumcontract(%);
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: comment start ]
+Assuming interchange of limit and derivative (need to show uniform convergence of derivatives, Bartle and Sherbert Thm 8.2.3)
+   [wxMaxima: comment end   ] */
+
+/* [wxMaxima: input   start ] */
+-n*p*p/(phi*(1-phi*(1-p))^2) - n/((1-phi)*(1-(1-p)*phi))+(n*(p-1)^2*(1-phi))/(1-(1-p)*phi)^3;
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+sqrt(-1/ev(%,n=10000,phi=.6,p=.4));
+/* [wxMaxima: input   end   ] */
+
+/* [wxMaxima: input   start ] */
+diff(p/(1-phi*(1-p))^2,phi);
+/* [wxMaxima: input   end   ] */
+
+/* Maxima can't load/batch files which end with a comment! */
+"Created with wxMaxima"$

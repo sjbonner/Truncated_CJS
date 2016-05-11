@@ -1,0 +1,88 @@
+\documentclass[12pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{bm,amsmath}
+
+\begin{document}
+\begin{center}
+  {\Large Variance Results for Simplified CJS Model}
+\end{center}
+
+\section{Model}
+
+I have simplified the Cormack-Jolly-Seber model by assuming:
+\begin{enumerate}
+\item That there is a single release of $n$ individuals.
+\item That $\phi$ is constant.
+\item That $p$ is constant \textit{and known}.
+\end{enumerate}
+Let $k$ denote the number of recapture occasions and $m_j$ the number of individuals recaptured on occasion $j$, $j=1,\ldots,k$. Define
+\[
+P_j(\phi)=\phi^j(1-p)^{(j-1)}p
+\]
+to be the probability that an individual is recaptured on occasion $j$. The likelihood is
+\[ 
+\mathrm{l}\left( \phi\right) :={{m}_{0}}\cdot \mathrm{log}\left( 1-\sum_{j=1}^{k}{{P}_{j}}\left( \phi\right) \right) +\sum_{j=1}^{k}{{m}_{j}}\cdot \mathrm{log}\left( {{P}_{j}}\left( \phi\right) \right) \mbox{}
+\]
+where $m_0=n-\sum_{j=1}^k m_j$ is the number of individuals never recaptured. 
+
+\section{Approximate Variance}
+
+Let $\hat{\phi}_k$ denote the MLE where $k$ indexes the number of recapture occasions. We can approximate $\mathrm{Var}(\hat{\phi}_k)$ through the usual arguments. The second derivative of $\mathrm{l}(\phi)$ with respect to $\phi$ is
+\begin{align*}
+\frac{d^2l}{d\phi}=&-\frac{{{m}_{0}}\cdot p\cdot \sum_{j=1}^{k}\left( j-1\right) \cdot j\cdot {{\left( 1-p\right) }^{j-1}}\cdot {{\phi}^{j-2}}}{1-p\cdot \sum_{j=1}^{k}{{\left( 1-p\right) }^{j-1}}\cdot {{\phi}^{j}}}\\
+&-\frac{{{m}_{0}}\cdot {{p}^{2}}\cdot {{\left( \sum_{j=1}^{k}j\cdot {{\left( 1-p\right) }^{j-1}}\cdot {{\phi}^{j-1}}\right) }^{2}}}{{{\left( 1-p\cdot \sum_{j=1}^{k}{{\left( 1-p\right) }^{j-1}}\cdot {{\phi}^{j}}\right) }^{2}}}\\
+&-\frac{\sum_{j=1}^{k}j\cdot {{m}_{j}}}{{{\phi}^{2}}}.
+\end{align*}
+This is a linear function of $m_0,m_1,\ldots,m_k$ so we can compute the expected value simply by replacing these values with their expected values
+\begin{align*}
+  E(m_0)&=n\left(1-\sum_{j=1}^k P_j(\phi)\right)\\
+\intertext{and}
+  E(m_j)&=nP_j, \quad j=1,\ldots,k.
+\end{align*}
+It follows that 
+\begin{align*}
+I(\phi)&=n\left[\frac{{{\left( \sum_{j=1}^{k}j {{\left( 1-p\right) }^{j-1}} {{\phi}^{j-1}p}\right) }^{2}}}{1-\sum_{j=1}^{k}{{\left( 1-p\right) }^{j-1}} {{\phi}^{j}}p}+\sum_{j=1}^{k}{{j}^{2}} {{\left( 1-p\right) }^{j-1}} {{\phi}^{j-2}p}
+\right]\\
+  &=n\left[\sum_{j=1}^k j^2\frac{P_j(\phi)}{\phi^2} + \frac{\left(\sum_{j=1}^k j\frac{P_j(\phi)}{\phi}\right)^2}{1-\sum_{j=1}^k P_j(\phi)}\right]
+\end{align*}
+and we can approximate $\mathrm{Var}(\hat{\phi}_k) \approx I(\phi)^{-1}$. The file \texttt{test\_simple\_variance.R} assesses this through simulation, and the results seem to do quite well.
+
+
+\section{Asymptotic Behaviour}
+
+There is a very simple argument to show that $\mathrm{Var}(\hat{\phi}_k)$. Intuitively, $\mathrm{Var}(\hat{\phi}_{k+1})<\mathrm{Var}(\hat{\phi}_k)$ because we gain more information as the number of recapture occasions increases. This should also be fairly simple to prove. Hence, $\mathrm{Var}(\hat{\phi}_k)$ is a decreasing sequence and since it is bounded below, $\mathrm{Var}(\hat{\phi}_k) \geq 0$, it must converge.
+
+Suppose now that $\sum_{j=1}^k P_j(\phi)$ the conditions for interchange of the limit (as $k \to \infty$) and derivative so that
+\begin{align*}
+  \frac{d}{d\phi} \sum_{j=1}^\infty P_j(\phi) & =\sum_{j=1}^\infty \frac{d}{d\phi}  P_j(\phi)
+\intertext{and}
+  \frac{d^2}{d\phi^2} \sum_{j=1}^\infty P_j(\phi) & =\sum_{j=1}^\infty \frac{d^2}{d\phi^2}  P_j(\phi).
+\end{align*}
+Note that
+\[
+\frac{d}{d\phi}  P_j(\phi)=j \frac{P_j(\phi)}{\phi}
+\mbox{ and }
+\frac{d^2}{d\phi^2}  P_j(\phi)=j(j+1) \frac{P_j(\phi)}{\phi}.
+\]
+Substituting these quantities into the expression for $I(\phi)$ above then yields 
+\[
+\lim_{k \to \infty} \mathrm{Var}(\hat \phi_k) = 
+\frac{\phi(1-\phi)(1-(1-p)\phi)}{np(1-\phi^2(1-p))}.
+\]
+Again, I have implemented this expression in \texttt{test\_simple\_variance.R} and it seems to work well.
+
+\section{Further Notes}
+
+I have just realized that there is a way to simplify $I(\phi)$ even using the fact that $\sum_{j=1}^k a_k=\sum_{j=1}^\infty a_k - \sum_{j=k+1}^\infty a_k$. For example
+\begin{align*}
+  \sum_{j=1}^k P_j(\phi) = &\sum_{j=1}^\infty P_j(\phi) - \sum_{j=k+1}^\infty P_j(\phi)\\
+                           &=P_1(\phi)\sum_{j=1}^\infty \phi^{j-1}(1-p)^{j-1} - 
+P_{k+1}(\phi) \sum_{j=1}^\infty \phi^{j-1}(1-p)^{j-1}\\
+&= (P_1(\phi)-P_{k+1}(\phi)) \sum_{j=0}^\infty \phi^{j}(1-p)^{j}\\
+&=\frac{\phi p - \phi^{k+1}(1-p)^kp}{1-\phi(1-p)}
+\end{align*}
+using the fact that $P_{j+1}(\phi)=P_j(\phi) \phi(1-p)$ and the limit for a geometric series. The same argument can be applied along with the results for the derivatives to compute $\sum_{j=1}^k j^2\frac{P_j(\phi)}{\phi^2}$ and $\sum_{j=1}^k j\frac{P_j(\phi)}{\phi}$. Substituting these expressions into $I(\phi)$ will remove the sums from $I(\phi)$ entirely. I'm hoping that this will then make it possible to compare $\mathrm{Var}(\hat \phi_k)$ and $\lim_{k \to \infty} \mathrm{Var}(\hat \phi_k)$ analytically to see how fast the variance decreases for given values of $n$, $p$ and $\phi$. 
+\end{document}
+
+
