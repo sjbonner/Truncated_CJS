@@ -10,12 +10,12 @@ source("TruncatedCJS/R/utilities.R")
 ## Parameters
 T = 10 # Occasions
 
-p = rep(.1, T - 1) # Capture probabilities
-phi = rep(.9, T - 1) # Survival probabilities
+p = rep(.9, T - 1) # Capture probabilities
+phi = rep(.1, T - 1) # Survival probabilities
 
 eta = c(log(phi) - log(1 - phi), log(p) - log(1 - p)) ## Parameters on logit scale
 
-n = rep(1000, T - 1) # Releases
+n = rep(10000, T - 1) # Releases
 
 V = sapply(2:(T - 1), function(k) {
   cat(k, "...\n")
