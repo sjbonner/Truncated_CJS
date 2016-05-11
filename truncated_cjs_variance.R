@@ -79,3 +79,4 @@ print(
 
 ## Compute maximum inflatioin by parameter and k
 subset(Vpropdf,Index != T-1) %>% group_by(Parameter,k) %>% summarise(max(Variance))
+
